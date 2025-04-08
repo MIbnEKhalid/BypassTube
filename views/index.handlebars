@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{#if title}}{{title}} | {{/if}}YouTube Viewer</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="/dg.svg" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="container">
+        <h1><a href="/">YouTube Viewer</a></h1>
+        <div class="search-bar">
+          <form action="/" method="get">
+            <div class="search-input-container">
+              <input
+                type="text"
+                name="q"
+                placeholder="Search YouTube..."
+                value="{{query}}"
+                required
+                aria-label="Search YouTube"
+              />
+              <button type="submit" aria-label="Search">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </header>
+        <main class="container">
+<section class="video-results">
+  {{#if query}}
+    <h2>Results for "{{query}}"</h2>
+  {{else}}
+    <h2>Popular Videos</h2>
+  {{/if}}
+
+  {{#if videos.length}}
+    <div class="video-grid">
+      {{#each videos}}
+        <article class="video-card">
+          <a href="/watch?v={{videoId}}{{#if ../query}}&q={{../query}}{{/if}}" class="video-link">
+            <div class="thumbnail-container">
+              <img 
+                src="{{thumbnail}}" 
+                alt="{{title}}" 
+                class="video-thumbnail"
+                loading="lazy"
+              >
+              <div class="duration-overlay">10:30</div>
+            </div>
+            <div class="video-info">
+              <h3 class="video-title">{{title}}</h3>
+              <p class="video-channel">{{channelTitle}}</p>
+            </div>
+          </a>
+        </article>
+      {{/each}}
+    </div>
+  {{else}}
+    <div class="no-results">
+      <i class="fas fa-video-slash"></i>
+      <p>No videos found. Try a different search term.</p>
+    </div>
+  {{/if}}
+</section>
+    </main>
+
+    <footer class="app-footer">
+      <div class="container">
+        <p>&copy; {{currentYear}} YouTube Viewer</p>
+      </div>
+    </footer>
+
+    <script src="/js/app.js" defer></script>
+  </body>
+</html>
