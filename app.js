@@ -76,7 +76,7 @@ app.engine('hbs', engine({
   }
 }));
 app.set('view engine', 'hbs');
-
+console.log('Views directory:', app.get('views'));
 // Serve static files
 app.use(express.static('public'));
 
@@ -178,7 +178,7 @@ app.get('/', async (req, res) => {
       videos = await processVideos(searchResponse);
     }
 
-    res.render('index', {
+    res.render('index.hbs', {
       videos,
       query: searchQuery,
       currentYear: new Date().getFullYear()
@@ -253,7 +253,7 @@ app.get('/watch', async (req, res) => {
       channelSubscribers: formatSubscribers(channelData.statistics.subscriberCount)
     };
 
-    res.render('watch', {
+    res.render('watch.hbs', {
       videoId,
       video,
       query: searchQuery,
