@@ -296,3 +296,40 @@
       text-align: center;
     }
   }
+  /* Channel info styles */
+.video-channel {
+  font-size: 0.9rem;
+  color: var(--text-light);
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+}
+
+.video-channel i {
+  margin-right: 5px;
+}
+
+.channel-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 10px;
+}
+
+.channel-info {
+  display: flex;
+  align-items: center;
+  margin: 10px 0;
+}
+
+.channel-name {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.subscribers {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  margin: 0;
+}

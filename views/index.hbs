@@ -9,7 +9,7 @@
     <div class="video-grid">
       {{#each videos}}
         <article class="video-card">
-          <a href="/watch?v={{videoId}}" class="video-link">
+          <a href="/watch?v={{videoId}}{{#if ../query}}&q={{../query}}{{/if}}" class="video-link">
             <div class="thumbnail-container">
               <img 
                 src="{{thumbnail}}" 
@@ -21,10 +21,10 @@
             </div>
             <div class="video-info">
               <h3 class="video-title">{{title}}</h3>
-              <p class="video-channel">Channel Name</p>
+              <p class="video-channel">{{channelTitle}}</p>
               <p class="video-meta">
-                <span class="views">1.2M views</span> • 
-                <span class="date">2 weeks ago</span>
+                <span class="views">{{formatNumber viewCount}} views</span> • 
+                <span class="date">{{formatDate publishedAt}}</span>
               </p>
               <p class="video-description">{{truncate description 100}}</p>
             </div>

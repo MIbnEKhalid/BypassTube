@@ -1,7 +1,7 @@
 <section class="video-player-section">
   <div class="container">
-    <a href="/" class="back-button">
-      <i class="fas fa-arrow-left"></i> Back to Search
+    <a href="{{#if query}}/?q={{query}}{{else}}/{{/if}}" class="back-button">
+      <i class="fas fa-arrow-left"></i> Back to {{#if query}}Search{{else}}Home{{/if}}
     </a>
     
     <div class="video-player-container">
@@ -16,21 +16,21 @@
       </div>
       
       <div class="video-details">
-        <h1 class="video-title">Video Title</h1>
+        <h1 class="video-title">{{video.title}}</h1>
         <div class="video-meta">
-          <span class="views">1,234,567 views</span>
-          <span class="date">• Published on Jan 1, 2023</span>
+          <span class="views">{{formatNumber video.viewCount}} views</span>
+          <span class="date">• Published on {{formatDate video.publishedAt}}</span>
         </div>
         <div class="channel-info">
-          <img src="https://via.placeholder.com/48" alt="Channel" class="channel-avatar">
+          <img src="{{video.channelThumbnail}}" alt="{{video.channelTitle}}" class="channel-avatar">
           <div>
-            <h2 class="channel-name">Channel Name</h2>
-            <p class="subscribers">1.2M subscribers</p>
+            <h2 class="channel-name">{{video.channelTitle}}</h2>
+            <p class="subscribers">{{video.channelSubscribers}} subscribers</p>
           </div>
           <button class="subscribe-button">Subscribe</button>
         </div>
         <div class="video-description">
-          <p>Full video description goes here...</p>
+          <p>{{video.description}}</p>
         </div>
       </div>
     </div>

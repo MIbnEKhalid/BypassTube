@@ -133,3 +133,4 @@ dist
 # Feedback files
 public/Assets/feedback.json
 public/Assets/feedback.txt
+.vercel
