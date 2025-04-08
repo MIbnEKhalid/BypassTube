@@ -8,10 +8,10 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 
 // Add at the top with other middleware
-app.use(helmet());
 dotenv.config();
 
 const app = express();
+app.use(helmet());
 const defaultQuery = process.env.DEFAULT_QUERY || 'computer science';
 app.set('trust proxy', 1);
 // Customize CSP based on your needs
