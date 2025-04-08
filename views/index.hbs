@@ -1,0 +1,41 @@
+<section class="video-results">
+  {{#if query}}
+    <h2>Results for "{{query}}"</h2>
+  {{else}}
+    <h2>Popular Videos</h2>
+  {{/if}}
+
+  {{#if videos.length}}
+    <div class="video-grid">
+      {{#each videos}}
+        <article class="video-card">
+          <a href="/watch?v={{videoId}}" class="video-link">
+            <div class="thumbnail-container">
+              <img 
+                src="{{thumbnail}}" 
+                alt="{{title}}" 
+                class="video-thumbnail"
+                loading="lazy"
+              >
+              <div class="duration-overlay">10:30</div>
+            </div>
+            <div class="video-info">
+              <h3 class="video-title">{{title}}</h3>
+              <p class="video-channel">Channel Name</p>
+              <p class="video-meta">
+                <span class="views">1.2M views</span> • 
+                <span class="date">2 weeks ago</span>
+              </p>
+              <p class="video-description">{{truncate description 100}}</p>
+            </div>
+          </a>
+        </article>
+      {{/each}}
+    </div>
+  {{else}}
+    <div class="no-results">
+      <i class="fas fa-video-slash"></i>
+      <p>No videos found. Try a different search term.</p>
+    </div>
+  {{/if}}
+</section>
