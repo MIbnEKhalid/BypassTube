@@ -22,6 +22,7 @@ import { pool } from "./pool.js";
 import { authenticate } from "./auth.js";
 import { validateSession, checkRolePermission, validateSessionAndRole, getUserData } from "./validateSessionAndRole.js";
 import fetch from 'node-fetch';
+import cookieParser from "cookie-parser"; // Import cookie-parser
 
 dotenv.config();
 const router = express.Router();
@@ -48,9 +49,14 @@ router.use(
     saveUninitialized: false,
     cookie: {
       maxAge: cookieExpireTime,
+      domain: process.env.IsDeployed === 'true' ? '.mbktechstudio.com' : undefined, // Use root domain for subdomain sharing
+      httpOnly: true,
+      secure: process.env.IsDeployed === 'true', // Use secure cookies in production
     },
   })
 );
+
+router.use(cookieParser()); // Use cookie-parser middleware
 
 router.use((req, res, next) => {
   if (req.session && req.session.user) {
@@ -87,6 +93,29 @@ router.use(async (req, res, next) => {
       });
     } else {
       req.session.user.role = null;
+    }
+  }
+  next();
+});
+
+router.use(async (req, res, next) => {
+  // Check for sessionId cookie if session is not initialized
+  if (!req.session.user && req.cookies && req.cookies.sessionId) {
+    console.log("Restoring session from sessionId cookie"); // Log session restoration
+    const sessionId = req.cookies.sessionId;
+    const query = `SELECT * FROM "${UserCredentialTable}" WHERE "SessionId" = $1`;
+    const result = await pool.query(query, [sessionId]);
+
+    if (result.rows.length > 0) {
+      const user = result.rows[0];
+      req.session.user = {
+        id: user.id,
+        username: user.UserName,
+        sessionId,
+      };
+      console.log(`Session restored for user: ${user.UserName}`); // Log successful session restoration
+    } else {
+      console.warn("No matching session found for sessionId"); // Log if no session is found
     }
   }
   next();
