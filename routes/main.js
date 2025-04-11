@@ -1,125 +1,24 @@
 import express from "express";
 import crypto from "crypto";
-import path from "path";
 import { fileURLToPath } from "url";
-import session from "express-session";
-import pgSession from "connect-pg-simple";
-import fs from "fs";
-import { promisify } from "util";
-const PgSession = pgSession(session);
 import multer from "multer";
-import { timeStamp } from "console";
-import { exec } from "child_process";
-import speakeasy from "speakeasy";
 import dotenv from "dotenv";
-import { engine } from "express-handlebars"; // Import Handlebars
-import Handlebars from "handlebars";
 import { google } from 'googleapis';
 
-import { marked, use } from 'marked';
 
 import { pool } from "./pool.js";
-import { authenticate } from "./auth.js";
-import { validateSession, checkRolePermission, validateSessionAndRole, getUserData } from "./validateSessionAndRole.js";
+import { authenticate, validateSession, checkRolePermission, validateSessionAndRole, getUserData } from "mbkauth";
 import fetch from 'node-fetch';
-import cookieParser from "cookie-parser"; // Import cookie-parser
 
 dotenv.config();
 const router = express.Router();
 const UserCredentialTable = process.env.UserCredentialTable;
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const storage = multer.memoryStorage();
-const upload = multer({ storage });
-const cookieExpireTime = 2 * 24 * 60 * 60 * 1000; // 12 hours
-// cookieExpireTime: 2 * 24 * 60 * 60 * 1000, 2 day
-// cookieExpireTime:  1* 60 * 1000, 1 min 
+
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
 const defaultQuery = process.env.DEFAULT_QUERY || 'computer science';
-
-router.use(
-  session({
-    store: new PgSession({
-      pool: pool, // Connection pool
-      tableName: "session", // Use another table-name than the default "session" one
-    }),
-    secret: process.env.session_seceret_key, // Replace with your secret key
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      maxAge: cookieExpireTime,
-      domain: process.env.IsDeployed === 'true' ? '.mbktechstudio.com' : undefined, // Use root domain for subdomain sharing
-      httpOnly: true,
-      secure: process.env.IsDeployed === 'true', // Use secure cookies in production
-    },
-  })
-);
-
-router.use(cookieParser()); // Use cookie-parser middleware
-
-router.use((req, res, next) => {
-  if (req.session && req.session.user) {
-    const userAgent = req.headers["user-agent"];
-    const userIp =
-      req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-    const formattedIp = userIp === "::1" ? "127.0.0.1" : userIp;
-
-    req.session.otherInfo = {
-      ip: formattedIp,
-      browser: userAgent,
-    };
-
-    next();
-  } else {
-    next();
-  }
-});
-
-// Save the username in a cookie, the cookie user name is use
-// for displaying user name in profile menu. This cookie is not use anyelse where.
-// So it is safe to use.
-router.use(async (req, res, next) => {
-  if (req.session && req.session.user) {
-    res.cookie("username", req.session.user.username, {
-      maxAge: cookieExpireTime,
-    });
-    const query = `SELECT "Role" FROM "${UserCredentialTable}" WHERE "UserName" = $1`;
-    const result = await pool.query(query, [req.session.user.username]);
-    if (result.rows.length > 0) {
-      req.session.user.role = result.rows[0].Role;
-      res.cookie("userRole", req.session.user.role, {
-        maxAge: cookieExpireTime,
-      });
-    } else {
-      req.session.user.role = null;
-    }
-  }
-  next();
-});
-
-router.use(async (req, res, next) => {
-  // Check for sessionId cookie if session is not initialized
-  if (!req.session.user && req.cookies && req.cookies.sessionId) {
-    console.log("Restoring session from sessionId cookie"); // Log session restoration
-    const sessionId = req.cookies.sessionId;
-    const query = `SELECT * FROM "${UserCredentialTable}" WHERE "SessionId" = $1`;
-    const result = await pool.query(query, [sessionId]);
-
-    if (result.rows.length > 0) {
-      const user = result.rows[0];
-      req.session.user = {
-        id: user.id,
-        username: user.UserName,
-        sessionId,
-      };
-      console.log(`Session restored for user: ${user.UserName}`); // Log successful session restoration
-    } else {
-      console.warn("No matching session found for sessionId"); // Log if no session is found
-    }
-  }
-  next();
-});
 
 router.get(["/login", "/signin"], (req, res) => {
   if (req.session && req.session.user) {
@@ -283,7 +182,7 @@ router.post("/logout", async (req, res) => {
 
 
 // Routes
-router.get('/chatbot', validateSessionAndRole("SuperAdmin"), async (req, res) => {
+router.get(['/home','/'], validateSessionAndRole("SuperAdmin"), async (req, res) => {
   const searchQuery = req.query.q || '';
   let videos = [];
 

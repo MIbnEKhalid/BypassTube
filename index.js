@@ -3,14 +3,11 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import mainRoutes from "./routes/main.js";
-import { pool } from "./routes/pool.js";
 import { engine } from "express-handlebars";
-import { validateSession, checkRolePermission, validateSessionAndRole, getUserData } from "./routes/validateSessionAndRole.js";
-import Handlebars from "handlebars"; // <-- You still need this import
 import minifyHTML from "express-minify-html";
 import minify from "express-minify";
 import compression from "compression";
-
+import mbkauth from "mbkauth";
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -18,6 +15,7 @@ const __dirname = path.dirname(__filename);
 
 
 const server = express();
+server.use(mbkauth);
 server.use(express.json());
 server.use(compression());
 server.use(minify());
@@ -63,18 +61,6 @@ server.engine("handlebars", engine({
 server.set("view engine", "handlebars");
 server.set("views", path.join(__dirname, "views"));
 server.use(express.static('public'));
-
-// Serve static files
-server.use(
-  "/Assets",
-  express.static(path.join(__dirname, "public/Assets"), {
-    setHeaders: (res, path) => {
-      if (path.endsWith(".css")) {
-        res.setHeader("Content-Type", "text/css");
-      }
-    },
-  })
-);
 
 server.use('/Assets/Images', express.static(path.join(__dirname, 'Assets'), {
   maxAge: '1d' // Cache assets for 1 day
@@ -127,7 +113,7 @@ server.use((err, req, res, next) => {
   res.render('templates/Error/500', { error: err });
 });
 
-const port = 3030;
+const port = 3033;
 
 // Start the server
 server.listen(port, () => {
