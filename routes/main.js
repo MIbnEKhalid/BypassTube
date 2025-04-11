@@ -1,14 +1,10 @@
 import express from "express";
-import crypto from "crypto";
 import { fileURLToPath } from "url";
 import multer from "multer";
 import dotenv from "dotenv";
 import { google } from 'googleapis';
-
-
 import { pool } from "./pool.js";
 import { authenticate, validateSession, checkRolePermission, validateSessionAndRole, getUserData } from "mbkauth";
-import fetch from 'node-fetch';
 
 dotenv.config();
 const router = express.Router();
@@ -26,160 +22,6 @@ router.get(["/login", "/signin"], (req, res) => {
   }
   return res.render("staticPage/login.handlebars");
 });
-
-//Invoke-RestMethod -Uri http://localhost:3030/terminateAllSessions -Method POST
-// Terminate all sessions route
-router.post("/terminateAllSessions", authenticate(process.env.Main_SECRET_TOKEN), async (req, res) => {
-  try {
-    await pool.query(`UPDATE "${UserCredentialTable}" SET "SessionId" = NULL`);
-
-    // Clear the session table
-    await pool.query('DELETE FROM "session"');
-
-    // Destroy all sessions on the server
-    req.session.destroy((err) => {
-      if (err) {
-        console.error("Error destroying session:", err);
-        return res
-          .status(500)
-          .json({ success: false, message: "Failed to terminate sessions" });
-      }
-      console.log("All sessions terminated successfully");
-      res.status(200).json({
-        success: true,
-        message: "All sessions terminated successfully",
-      });
-    });
-  } catch (err) {
-    console.error("Database query error during session termination:", err);
-    res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
-  }
-}
-);
-
-router.post("/login", async (req, res) => {
-
-  const { username, password, token, recaptcha } = req.body;
-  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-  const verificationUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptcha}`;
-
-  //bypass recaptcha for specific users
-  if (username !== "ibnekhalid" && username !== "maaz.waheed" && username !== "support") {
-    const response = await fetch(verificationUrl, { method: 'POST' });
-    const body = await response.json();
-
-    if (!body.success) {
-      return res.status(400).json({ success: false, message: `Failed reCAPTCHA verification` });
-    }
-  }
-
-  if (!username || !password) {
-    console.log("Login attempt with missing username or password");
-    return res.status(400).json({
-      success: false,
-      message: "Username and password are required",
-    });
-  }
-
-  try {
-    // Query to check if the username exists
-    const userQuery = `SELECT * FROM "${UserCredentialTable}" WHERE "UserName" = $1`;
-    const userResult = await pool.query(userQuery, [username]);
-
-    if (userResult.rows.length === 0) {
-      console.log(`Login attempt with non-existent username: \"${username}\"`);
-      return res
-        .status(404)
-        .json({ success: false, message: "Username does not exist" });
-    }
-
-    const user = userResult.rows[0];
-
-    // Check if the password matches
-    if (user.Password !== password) {
-      console.log(`Incorrect password attempt for username: \"${username}\"`);
-      return res
-        .status(401)
-        .json({ success: false, message: "Incorrect password" });
-    }
-
-    // Check if the account is inactive
-    if (!user.Active) {
-      console.log(
-        `Inactive account login attempt for username: \"${username}\"`
-      );
-      return res
-        .status(403)
-        .json({ success: false, message: "Account is inactive" });
-    } 
-    // Generate session ID
-    const sessionId = crypto.randomBytes(256).toString("hex"); // Generate a secure random session ID
-    await pool.query(`UPDATE "${UserCredentialTable}" SET "SessionId" = $1 WHERE "id" = $2`, [
-      sessionId,
-      user.id,
-    ]);
-
-    // Store session ID in session
-    req.session.user = {
-      id: user.id,
-      username: user.UserName,
-      sessionId,
-    };
-
-    console.log(`User \"${username}\" logged in successfully`);
-    res.status(200).json({
-      success: true,
-      message: "Login successful",
-      sessionId,
-    });
-  } catch (err) {
-    console.error("Database query error:", err);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
-  }
-});
-
-router.post("/logout", async (req, res) => {
-  if (req.session.user) {
-    try {
-      const { id, username } = req.session.user;
-      const query = `SELECT "Active" FROM "${UserCredentialTable}" WHERE "id" = $1`;
-      const result = await pool.query(query, [id]);
-
-      if (result.rows.length > 0 && !result.rows[0].Active) {
-        console.log("Account is inactive during logout");
-      }
-
-      req.session.destroy((err) => {
-        if (err) {
-          console.error("Error destroying session:", err);
-          return res
-            .status(500)
-            .json({ success: false, message: "Logout failed" });
-
-        }
-        res.clearCookie("connect.sid");
-        console.log(`User \"${username}\" logged out successfully`);
-        res.status(200).json({ success: true, message: "Logout successful" });
-      });
-    } catch (err) {
-      console.error("Database query error during logout:", err);
-      res
-        .status(500)
-        .json({ success: false, message: "Internal Server Error" });
-      return res.render('templates/Error/500', { error: err }); // Assuming you have an error template
-    }
-  } else {
-    res.status(400).json({ success: false, message: "Not logged in" });
-  }
-}); 
-
-
-
-
-
-
 
 // Routes
 router.get(['/home','/'], validateSessionAndRole("SuperAdmin"), async (req, res) => {

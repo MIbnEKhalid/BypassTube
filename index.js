@@ -60,6 +60,8 @@ server.engine("handlebars", engine({
 }));
 server.set("view engine", "handlebars");
 server.set("views", path.join(__dirname, "views"));
+
+server.use(express.static(path.join(__dirname, "public")));
 server.use(express.static('public'));
 
 server.use('/Assets/Images', express.static(path.join(__dirname, 'Assets'), {
